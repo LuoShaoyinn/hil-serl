@@ -202,7 +202,7 @@ class FrankaEnv(gym.Env):
         euler[1:] = np.clip(
             euler[1:], self.rpy_bounding_box.low[1:], self.rpy_bounding_box.high[1:]
         )
-        pose[3:] = Rotation.from_euler("xyz", euler).as_quat()
+        # pose[3:] = Rotation.from_euler("xyz", euler).as_quat()
 
         return pose
 
@@ -221,7 +221,7 @@ class FrankaEnv(gym.Env):
             * Rotation.from_quat(self.currpos[3:])
         ).as_quat()
 
-        gripper_action = action[6] * self.action_scale[2]
+        gripper_action = action[6] # * self.action_scale[2]
 
         self._send_gripper_command(gripper_action)
         self._send_pos_command(self.clip_safety_box(self.nextpos))
@@ -287,13 +287,9 @@ class FrankaEnv(gym.Env):
         """Move the robot to the goal position with linear interpolation."""
         if goal.shape == (6,):
             goal = np.concatenate([goal[:3], euler_2_quat(goal[3:])])
-        steps = int(timeout * self.hz)
-        self._update_currpos()
-        path = np.linspace(self.currpos, goal, steps)
-        for p in path:
-            self._send_pos_command(p)
-            time.sleep(1 / self.hz)
-        self.nextpos = p
+        self._send_pos_command(goal)
+        time.sleep(timeout)
+        self.nextpos = goal
         self._update_currpos()
 
     def go_to_reset(self, joint_reset=False):
@@ -416,8 +412,10 @@ class FrankaEnv(gym.Env):
 
     def _send_pos_command(self, pos: np.ndarray):
         """Internal function to send position command to the robot."""
-        self._recover()
+        # self._recover()
         arr = np.array(pos).astype(np.float32)
+        if arr[3] < 0:
+            arr *= np.array([1, 1, 1, -1, -1, -1, -1])
         data = {"arr": arr.tolist()}
         requests.post(self.url + "pose", json=data)
 

@@ -79,4 +79,10 @@ def main(_):
         print(f"saved {len(failures)} failure transitions to {file_name}")
         
 if __name__ == "__main__":
+    np.set_printoptions(
+            precision=4,      # 保留4位小数
+            suppress=True,    # 禁止科学计数法
+            linewidth=200,    # 避免多行换行输出
+            floatmode='fixed' # 强制使用定点表示法（非科学计数法）
+    )
     app.run(main)
