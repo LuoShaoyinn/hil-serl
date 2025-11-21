@@ -16,7 +16,7 @@ def main():
         print(f"✅ Found devices: {serials}")
 
     # 2. Select the first device
-    serial = serials[1]
+    serial = serials[2]
     print(f"🔧 Using device serial: {serial}")
 
     # 3. Initialize camera (color + optional depth)
@@ -39,7 +39,6 @@ def main():
                 print("⚠️ Frame not available.")
                 continue
 
-            print(frame.shape)
 
             # If depth is enabled, last channel contains depth
             if frame.shape[2] == 4:  # BGR + depth
@@ -50,9 +49,6 @@ def main():
                 depth_vis = cv2.convertScaleAbs(depth_img, alpha=0.03)
                 depth_vis = cv2.applyColorMap(depth_vis, cv2.COLORMAP_JET)
             
-                print(color_img[0][0])
-                print("----------------")
-
                 cv2.imshow("Color", color_img)
                 cv2.imshow("Depth", depth_vis)
             else:

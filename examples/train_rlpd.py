@@ -93,6 +93,7 @@ def actor(agent, data_store, intvn_data_store, env, sampling_rng):
                 actions = np.asarray(jax.device_get(actions))
 
                 next_obs, reward, done, truncated, info = env.step(actions)
+                reward = np.asarray(jax.device_get(reward))
                 obs = next_obs
 
                 if done:
@@ -167,8 +168,8 @@ def actor(agent, data_store, intvn_data_store, env, sampling_rng):
 
         # Step environment
         with timer.context("step_env"):
-
             next_obs, reward, done, truncated, info = env.step(actions)
+            reward = np.asarray(jax.device_get(reward))
             if "left" in info:
                 info.pop("left")
             if "right" in info:
@@ -257,8 +258,6 @@ def learner(rng, agent, replay_buffer, demo_buffer, wandb_logger=None):
     def stats_callback(type: str, payload: dict) -> dict:
         """Callback for when server receives stats request."""
         assert type == "send-stats", f"Invalid request type: {type}"
-        if wandb_logger is not None:
-            wandb_logger.log(payload, step=step)
         return {}  # not expecting a response
 
     # Create server
@@ -341,10 +340,6 @@ def learner(rng, agent, replay_buffer, demo_buffer, wandb_logger=None):
             agent = jax.block_until_ready(agent)
             server.publish_network(agent.state.params)
 
-        if step % config.log_period == 0 and wandb_logger:
-            wandb_logger.log(update_info, step=step)
-            wandb_logger.log({"timer": timer.get_average_times()}, step=step)
-
         if (
             step > 0
             and config.checkpoint_period
@@ -413,7 +408,7 @@ def main(_):
     # replicate agent across devices
     # need the jnp.array to avoid a bug where device_put doesn't recognize primitives
     agent = jax.device_put(
-        jax.tree_map(jnp.array, agent), sharding.replicate()
+        jax.tree.map(jnp.array, agent), sharding.replicate()
     )
 
     if FLAGS.checkpoint_path is not None and os.path.exists(FLAGS.checkpoint_path):
@@ -437,16 +432,11 @@ def main(_):
             include_grasp_penalty=include_grasp_penalty,
         )
         # set up wandb and logging
-        wandb_logger = make_wandb_logger(
-            project="hil-serl",
-            description=FLAGS.exp_name,
-            debug=FLAGS.debug,
-        )
-        return replay_buffer, wandb_logger
+        return replay_buffer
 
     if FLAGS.learner:
         sampling_rng = jax.device_put(sampling_rng, device=sharding.replicate())
-        replay_buffer, wandb_logger = create_replay_buffer_and_wandb_logger()
+        replay_buffer = create_replay_buffer_and_wandb_logger()
         demo_buffer = MemoryEfficientReplayBufferDataStore(
             env.observation_space,
             env.action_space,
@@ -499,7 +489,6 @@ def main(_):
             agent,
             replay_buffer,
             demo_buffer=demo_buffer,
-            wandb_logger=wandb_logger,
         )
 
     elif FLAGS.actor:

@@ -39,19 +39,19 @@ class USBEnv(FrankaEnv):
         # Move above the target pose
         target = copy.deepcopy(self.currpos)
         target[2] = self.config.TARGET_POSE[2] + 0.05
-        self.interpolate_move(target, timeout=1)
+        self.interpolate_move(target, timeout=0.5)
         time.sleep(0.5)
-        self.interpolate_move(self.config.TARGET_POSE, timeout=1)
+        self.interpolate_move(self.config.TARGET_POSE, timeout=0.5)
         time.sleep(0.5)
         self._send_gripper_command(-1.0)
 
         self._update_currpos()
         reset_pose = copy.deepcopy(self.config.TARGET_POSE)
-        reset_pose[2] += 0.1
-        self.interpolate_move(reset_pose, timeout=1)
+        reset_pose[0] += 0.05
+        self.interpolate_move(reset_pose, timeout=0.5)
 
         obs, info = super().reset(**kwargs)
-        time.sleep(1)
+        time.sleep(0.5)
         self._send_gripper_command(1.0)
         time.sleep(0.5)
         self.success = False
@@ -64,6 +64,9 @@ class USBEnv(FrankaEnv):
         if goal.shape == (6,):
             goal = np.concatenate([goal[:3], euler_2_quat(goal[3:])])
         self._send_pos_command(goal)
+        while np.max(self.currpos - goal) > 0.01:
+            time.sleep(0.01)
+            self._update_currpos()
         time.sleep(timeout)
         self._update_currpos()
     

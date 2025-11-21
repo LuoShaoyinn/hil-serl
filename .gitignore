@@ -5,3 +5,8 @@ __pycache__
 *.so
 *.pyc
 wandb/
+classifier_data/
+classifier_ckpt/
+demo_data/
+debug/
+*.pkl

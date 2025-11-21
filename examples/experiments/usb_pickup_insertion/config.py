@@ -23,38 +23,32 @@ class EnvConfig(DefaultEnvConfig):
     REALSENSE_CAMERAS = {
         "wrist_1": {
             "serial_number": "230422272349",
-            "dim": (640, 480),
+            "dim": (1280, 720),
             "exposure": 10500,
         },
         "wrist_2": {
-            "serial_number": "none",
+            "serial_number": "419122270589",
             "dim": (1280, 720),
             "exposure": 10500,
         },
         "side_policy": {
             "serial_number": "836612070409",
-            "dim": (640, 480),
+            "dim": (1280, 720),
             "exposure": 13000,
-        },
-        "side_classifier": {
-            "serial_number": "836612070409",
-            "dim": (640, 480),
-            "exposure": 13000,
-        },
+        }
     }
     IMAGE_CROP = {"wrist_1": lambda img: img[0:-1, 0:-1],
-                  "wrist_2": lambda img: img[:-200, 200:-200],
-                  "side_policy": lambda img: img[150:480, 200:640],
-                  "side_classifier": lambda img: img[150:480, 200:640]}
-    RESET_POSE = np.array([-0.12194, -0.45188, 0.060, np.pi, 0.0, -0.5 * np.pi])
-    TARGET_POSE = np.array([-0.048, -0.45190, 0.028, np.pi, 0.0, -0.5 * np.pi])
-    ACTION_SCALE = np.array([0.1, 0.05, 0.05])
+                  "wrist_2": lambda img: img[0:-1, 0:-1],
+                  "side_policy": lambda img: img[0:-1, 0:-1]}
+    TARGET_POSE = np.array([-0.165, -0.6635, -0.04, np.pi, 0.0, 0.5 * np.pi])
+    RESET_POSE = np.array([-0.1132, -0.6635, -0.04, np.pi, 0.0, 0.5 * np.pi])
+    ACTION_SCALE = np.array([0.01, 0.01, 0.01])
     RANDOM_RESET = True
     DISPLAY_IMAGE = True
     RANDOM_XY_RANGE = 0.002
     RANDOM_RZ_RANGE = 0.005
-    ABS_POSE_LIMIT_HIGH = TARGET_POSE + np.array([0.05, 0.06, 0.05, 0.1, 0.1, 0.3])
-    ABS_POSE_LIMIT_LOW = TARGET_POSE - np.array([0.1, 0.06, 0.05, 0.1, 0.1, 0.3])
+    ABS_POSE_LIMIT_HIGH = TARGET_POSE + np.array([0.10, 0.05, 0.05, 0.0, 0.0, 0.5])
+    ABS_POSE_LIMIT_LOW = TARGET_POSE - np.array([0.05, 0.05, 0.018, 0.0, 0.0, 0.5])
     COMPLIANCE_PARAM = {
         "translational_stiffness": 2000,
         "translational_damping": 89,
@@ -100,9 +94,9 @@ class EnvConfig(DefaultEnvConfig):
 
 class TrainConfig(DefaultTrainingConfig):
     image_keys = ["side_policy", "wrist_1", "wrist_2"]
-    classifier_keys = ["side_classifier"]
+    classifier_keys = ["side_policy", "wrist_1", "wrist_2"]
     proprio_keys = ["tcp_pose", "tcp_vel", "tcp_force", "tcp_torque", "gripper_pose"]
-    checkpoint_period = 2000
+    checkpoint_period = 200
     cta_ratio = 2
     random_steps = 0
     discount = 0.98
@@ -135,7 +129,7 @@ class TrainConfig(DefaultTrainingConfig):
 
                 score = sigmoid(logits)               # 标量，比如 0.017...
                 cond = (score > 0.7) & (obs["state"][0, 0] > 0.4)
-                return jnp.where(cond, 1.0, 0.0)      # 返回 JAX 标量 1.0 或 0.0
+                return int(jnp.where(cond, 1, 0).item())      # 返回 JAX 标量 1.0 或 0.0
 
             env = MultiCameraBinaryRewardClassifierWrapper(env, reward_func)
         env = GripperPenaltyWrapper(env, penalty=-0.02)
