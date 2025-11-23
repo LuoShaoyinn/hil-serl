@@ -47,7 +47,7 @@ class USBEnv(FrankaEnv):
 
         self._update_currpos()
         reset_pose = copy.deepcopy(self.config.TARGET_POSE)
-        reset_pose[1] += 0.04
+        reset_pose[0] += 0.04
         self.interpolate_move(reset_pose, timeout=0.5)
 
         obs, info = super().reset(**kwargs)
@@ -64,6 +64,9 @@ class USBEnv(FrankaEnv):
             goal = np.concatenate([goal[:3], euler_2_quat(goal[3:])])
         self._send_pos_command(goal)
         time.sleep(timeout)
+        while np.max(self.currpos - goal) > 0.01:
+            time.sleep(0.01)
+            self._update_currpos()
         self._update_currpos()
     
     def go_to_reset(self, joint_reset=False):

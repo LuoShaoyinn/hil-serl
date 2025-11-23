@@ -3,7 +3,7 @@ import os
 from tqdm import tqdm
 import numpy as np
 import pickle as pkl
-import datetime
+import datetime, time
 from absl import app, flags
 from pynput import keyboard
 
@@ -64,6 +64,9 @@ def main(_):
 
         if done or truncated:
             obs, _ = env.reset()
+            success_key = False
+            time.sleep(0.5)
+            print("[+] prevent success key long press")
 
     if not os.path.exists("./classifier_data"):
         os.makedirs("./classifier_data")

@@ -5,6 +5,11 @@ __pycache__
 *.so
 *.pyc
 wandb/
+classifier_ckpt/
+classifier_data/
+demo_data/
+debug/
+*.pkl
 
 # ------------------------
 # Python bytecode / cache

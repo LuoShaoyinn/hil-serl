@@ -26,7 +26,7 @@ class WandBLogger(object):
     def get_default_config():
         config = ml_collections.ConfigDict()
         config.project = "serl_launcher"  # WandB Project Name
-        config.entity = ml_collections.config_dict.FieldReference(None, field_type=str)
+        config.entity = "luoshaoyinn-team" # ml_collections.config_dict.FieldReference(None, field_type=str)
         # Which entity to log as (default: your own user)
         config.exp_descriptor = ""  # Run name (doesn't have to be unique)
         # Unique identifier for run (will be automatically generated unless
